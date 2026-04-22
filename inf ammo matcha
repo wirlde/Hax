@@ -1,0 +1,41 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local MAX_AMMO = 666
+
+local function setAmmo(character)
+    if not character then return false end
+
+    local playerObj = character:FindFirstChild("Player")
+    if not playerObj then return false end
+
+    playerObj:SetAttribute("MaxAmmo", MAX_AMMO)
+    playerObj:SetAttribute("Ammo", MAX_AMMO)
+    return true
+end
+
+local function trySetAmmo(character)
+    local maxAttempts = 50
+    local attempts = 0
+
+    while attempts < maxAttempts do
+        if setAmmo(character) then
+            print("Ammo set successfully")
+            break
+        end
+        attempts += 1
+        task.wait(0.1)
+    end
+
+    if attempts >= maxAttempts then
+        warn("Failed to set ammo after " .. maxAttempts .. " attempts")
+    end
+end
+
+local character = player.Character or player.CharacterAdded:Wait()
+trySetAmmo(character)
+
+while character.Parent do
+    setAmmo(character)
+    task.wait(0.5)
+end

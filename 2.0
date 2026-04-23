@@ -1,0 +1,95 @@
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+
+local CONFIG = {
+	Ammo = 67,
+	Stamina = 9e9,
+	RefreshSpeed = 0.05,
+	StartupAttempts = 50,
+	StartupDelay = 0.1,
+	ReportInterval = 1,
+}
+
+local function isNumericValue(instance)
+	return instance and (instance:IsA("IntValue") or instance:IsA("NumberValue"))
+end
+
+local function setNumericValue(instance, value)
+	if not isNumericValue(instance) then
+		return false
+	end
+
+	if instance.Value ~= value then
+		instance.Value = value
+	end
+
+	return true
+end
+
+local function applyCharacterValues(character)
+	if not character or not character.Parent then
+		return false
+	end
+
+	local changed = false
+
+	if setNumericValue(character:FindFirstChild("PrimaryAmmo"), CONFIG.Ammo) then
+		changed = true
+	end
+
+	if setNumericValue(character:FindFirstChild("SecondaryAmmo"), CONFIG.Ammo) then
+		changed = true
+	end
+
+	if setNumericValue(character:FindFirstChild("Stamina"), CONFIG.Stamina) then
+		changed = true
+	end
+
+	if setNumericValue(character:FindFirstChild("MaxStamina"), CONFIG.Stamina) then
+		changed = true
+	end
+
+	return changed
+end
+
+local function reportStatus(applied)
+	if applied then
+		print("[infammo] OK: ammo/stamina values applied.")
+	else
+		print("[infammo] Waiting: no matching ammo/stamina values found.")
+	end
+end
+
+local startupApplied = false
+
+for _ = 1, CONFIG.StartupAttempts do
+	local character = player.Character or player.CharacterAdded:Wait()
+
+	if applyCharacterValues(character) then
+		startupApplied = true
+		print("[infammo] Success: ammo/stamina values were applied.")
+		break
+	end
+
+	task.wait(CONFIG.StartupDelay)
+end
+
+if not startupApplied then
+	reportStatus(false)
+end
+
+local lastReportTime = tick()
+
+while player.Parent do
+	local character = player.Character
+	local applied = applyCharacterValues(character)
+	local now = tick()
+
+	if now - lastReportTime >= CONFIG.ReportInterval then
+		reportStatus(applied)
+		lastReportTime = now
+	end
+
+	task.wait(CONFIG.RefreshSpeed)
+end
